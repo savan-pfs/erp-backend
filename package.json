@@ -1,0 +1,39 @@
+{
+  "name": "cultivation-compass-backend",
+  "version": "1.0.0",
+  "description": "Backend for Cultivation Compass Agricultural Management System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "seed:full": "node scripts/seed-comprehensive.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "pdfkit": "^0.17.2",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": [
+    "agriculture",
+    "management",
+    "nodejs",
+    "express",
+    "postgresql"
+  ],
+  "author": "Cultivation Compass Team",
+  "license": "MIT"
+}

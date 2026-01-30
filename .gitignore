@@ -1,0 +1,21 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Uploads (user-uploaded files)
+uploads/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
