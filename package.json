@@ -1,7 +1,7 @@
 {
-  "name": "cultivation-compass-backend",
+  "name": "passionfarmd-erp-backend",
   "version": "1.0.0",
-  "description": "Backend for Cultivation Compass Agricultural Management System",
+  "description": "Backend for Passion Farms ERP — cultivation and operations management",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -35,6 +35,6 @@
     "express",
     "postgresql"
   ],
-  "author": "Cultivation Compass Team",
+  "author": "Passion Farms",
   "license": "MIT"
 }

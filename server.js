@@ -1,13 +1,14 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 const db = require('./config/database');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const organizationRoutes = require('./routes/organizations');
-// const facilityRoutes = require('./routes/facilities'); // Removed - no facility logic
+const facilityRoutes = require('./routes/facilities');
 const farmRoutes = require('./routes/farms');
 const cropRoutes = require('./routes/crops');
 const geneticsRoutes = require('./routes/genetics');
@@ -56,20 +57,31 @@ app.use(helmet({
   },
 }));
 
-// Rate limiting - DISABLED for development
-// const limiter = rateLimit({
-//   windowMs: 15 * 60 * 1000, // 15 minutes
-//   max: 100 // limit each IP to 100 requests per windowMs
-// });
-// app.use(limiter);
+// Rate limiting: stricter in production, generous in development
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: process.env.NODE_ENV === 'production' ? 100 : 1000,
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(limiter);
 
-// CORS configuration - Allow all origins for public access
-// This allows anyone to access the APIs from any domain
-// IMPORTANT: Must be after helmet() to override security headers
+// CORS: in production set FRONTEND_URL and restrict origins; in development allow all
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(',').map((u) => u.trim())
+  : null;
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow all origins - no restrictions
-    callback(null, true);
+    if (!allowedOrigins) {
+      callback(null, true);
+      return;
+    }
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
@@ -88,7 +100,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/organizations', organizationRoutes);
-// app.use('/api/facilities', facilityRoutes); // Removed - no facility logic
+app.use('/api/facilities', facilityRoutes);
 app.use('/api/farms', farmRoutes);
 app.use('/api/crops', cropRoutes);
 app.use('/api/genetics', geneticsRoutes);

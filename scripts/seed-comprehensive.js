@@ -22,19 +22,69 @@ async function seedDatabase() {
     await query('DELETE FROM rooms');
     await query('DELETE FROM crops');
     await query('DELETE FROM farms');
+    await query('DELETE FROM user_roles');
     await query('DELETE FROM users');
     console.log('🧹 Cleared existing data');
 
-    // Create users
-    const hashedPassword = await bcrypt.hash('password123', 12);
-    const userResult = await query(`
-      INSERT INTO users (email, password_hash, first_name, last_name, phone, role)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING id
-    `, ['admin@passionfarms.com', hashedPassword, 'Admin', 'User', '+1 555-0100', 'admin']);
+    // Get or create organization for RBAC
+    let orgId = null;
+    const orgCheck = await query('SELECT id FROM organizations LIMIT 1');
+    if (orgCheck.rows.length > 0) {
+      orgId = orgCheck.rows[0].id;
+      console.log('📁 Using existing organization');
+    } else {
+      const orgResult = await query(`
+        INSERT INTO organizations (name, legal_name, description, approval_status, location_state_code, location_country_code)
+        VALUES ($1, $2, $3, 'APPROVED', 'CA', 'US')
+        RETURNING id
+      `, ['Passion Farms Demo', 'Passion Farms Demo LLC', 'Demo organization for RBAC testing']);
+      orgId = orgResult.rows[0].id;
+      console.log('📁 Created organization: Passion Farms Demo');
+    }
 
-    const userId = userResult.rows[0].id;
-    console.log('👤 Created admin user: admin@passionfarms.com / password123');
+    // Get role IDs (Title Case from migrations 040/060)
+    const roleRows = await query(`
+      SELECT id, name FROM roles
+      WHERE name IN ('Super Admin', 'Org Admin', 'Cultivation Manager', 'Technician / Grower', 'Inventory Clerk', 'Read-only Viewer')
+        AND is_active = true
+    `);
+    const roleIds = {};
+    roleRows.rows.forEach((r) => { roleIds[r.name] = r.id; });
+    if (Object.keys(roleIds).length === 0) {
+      throw new Error('No RBAC roles found. Run migrations first (npm run migrate).');
+    }
+    console.log('🔐 Loaded roles:', Object.keys(roleIds).join(', '));
+
+    const hashedPassword = await bcrypt.hash('password123', 12);
+    const demoUsers = [
+      { email: 'superadmin@passionfarms.com', firstName: 'Super', lastName: 'Admin', role: 'Super Admin', orgId: null },
+      { email: 'orgadmin@passionfarms.com', firstName: 'Org', lastName: 'Admin', role: 'Org Admin', orgId },
+      { email: 'cultivation@passionfarms.com', firstName: 'Cultivation', lastName: 'Manager', role: 'Cultivation Manager', orgId },
+      { email: 'grower@passionfarms.com', firstName: 'Grower', lastName: 'Tech', role: 'Technician / Grower', orgId },
+      { email: 'inventory@passionfarms.com', firstName: 'Inventory', lastName: 'Clerk', role: 'Inventory Clerk', orgId },
+      { email: 'viewer@passionfarms.com', firstName: 'Read', lastName: 'Only', role: 'Read-only Viewer', orgId },
+    ];
+
+    const userIds = {};
+    for (const u of demoUsers) {
+      const res = await query(`
+        INSERT INTO users (email, password_hash, first_name, last_name, phone, role, organization_id, approval_status, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'APPROVED', true)
+        RETURNING id
+      `, [u.email, hashedPassword, u.firstName, u.lastName, '+1 555-0100', u.role, u.orgId]);
+      userIds[u.email] = res.rows[0].id;
+      const roleId = roleIds[u.role];
+      if (roleId) {
+        await query(`
+          INSERT INTO user_roles (user_id, role_id, organization_id, is_active)
+          VALUES ($1, $2, $3, true)
+        `, [res.rows[0].id, roleId, u.orgId]);
+      }
+    }
+    console.log('👥 Created', demoUsers.length, 'users with role-based access');
+
+    // Use Org Admin as data owner for all cultivation data
+    const userId = userIds['orgadmin@passionfarms.com'];
 
     // Create genetics
     const geneticsResult = await query(`
@@ -207,9 +257,8 @@ async function seedDatabase() {
     console.log('📅 Created calendar events');
 
     console.log('\n🎉 Comprehensive database seeding completed successfully!');
-    console.log('\n📋 Login Credentials:');
-    console.log('🔑 Email: admin@passionfarms.com');
-    console.log('🔑 Password: password123');
+    console.log('\n📋 Login Credentials (password for all: password123):');
+    demoUsers.forEach((u) => console.log(`   ${u.role}: ${u.email}`));
     console.log('\n📊 Summary:');
     console.log(`   - Genetics: ${geneticIds.length}`);
     console.log(`   - Rooms: ${roomIds.length}`);

@@ -1,5 +1,13 @@
 const { hasPermission, hasRole, hasAnyRole } = require('./rbac-helpers');
 
+const normalizeRole = (role) => (role || '').toLowerCase().replace(/[\s\/]+/g, '_');
+
+function isSuperAdmin(req) {
+  if (!req.user) return false;
+  if (normalizeRole(req.user.role) === 'super_admin') return true;
+  return (req.user.roleNames || []).some((r) => normalizeRole(r) === 'super_admin');
+}
+
 /**
  * Middleware to check if user has a specific permission
  * Usage: requirePermission('cultivation:create_plant')
@@ -11,8 +19,8 @@ function requirePermission(permissionName) {
         return res.status(401).json({ error: 'Authentication required' });
       }
 
-      // Super Admin bypasses all permission checks
-      if (req.user.role === 'super_admin' || req.user.roleNames?.includes('super_admin')) {
+      // Super Admin bypasses all permission checks (handles Title Case "Super Admin")
+      if (isSuperAdmin(req)) {
         return next();
       }
 
@@ -51,7 +59,7 @@ function requireRole(roleName) {
       }
 
       // Super Admin bypasses all role checks
-      if (req.user.role === 'super_admin' || req.user.roleNames?.includes('super_admin')) {
+      if (isSuperAdmin(req)) {
         return next();
       }
 
@@ -90,7 +98,7 @@ function requireAnyRole(roleNames) {
       }
 
       // Super Admin bypasses all role checks
-      if (req.user.role === 'super_admin' || req.user.roleNames?.includes('super_admin')) {
+      if (isSuperAdmin(req)) {
         return next();
       }
 
@@ -129,7 +137,7 @@ function requireAnyPermission(permissionNames) {
       }
 
       // Super Admin bypasses all permission checks
-      if (req.user.role === 'super_admin' || req.user.roleNames?.includes('super_admin')) {
+      if (isSuperAdmin(req)) {
         return next();
       }
 

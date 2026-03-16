@@ -121,22 +121,25 @@ router.post('/register-org-admin', async (req, res) => {
 
       const organization = orgResult.rows[0];
 
-      // Create user with org_admin role
+      // Create user with Org Admin role (Title Case for RBAC)
       const userResult = await query(`
         INSERT INTO users (
-          email, password_hash, first_name, last_name, phone, 
+          email, password_hash, first_name, last_name, phone,
           role, organization_id, approval_status
         )
-        VALUES ($1, $2, $3, $4, $5, 'org_admin', $6, 'APPROVED')
+        VALUES ($1, $2, $3, $4, $5, 'Org Admin', $6, 'APPROVED')
         RETURNING id, email, first_name, last_name, role, organization_id, created_at
       `, [email, passwordHash, firstName, lastName, phone || null, organization.id]);
 
       const user = userResult.rows[0];
 
-      // Get org_admin role ID
-      const roleResult = await query('SELECT id FROM roles WHERE name = $1', ['org_admin']);
+      // Get Org Admin role ID (Title Case from migration 040/060)
+      const roleResult = await query(
+        'SELECT id FROM roles WHERE name = $1 AND is_active = true',
+        ['Org Admin']
+      );
       if (roleResult.rows.length === 0) {
-        throw new Error('org_admin role not found');
+        throw new Error('Org Admin role not found in database');
       }
       const orgAdminRoleId = roleResult.rows[0].id;
 
@@ -165,13 +168,13 @@ router.post('/register-org-admin', async (req, res) => {
         })
       ]);
 
-      // Get all Super Admin users to notify
+      // Get all Super Admin users to notify (Title Case role name)
       const superAdminResult = await query(`
         SELECT u.id
         FROM users u
         INNER JOIN user_roles ur ON u.id = ur.user_id
         INNER JOIN roles r ON ur.role_id = r.id
-        WHERE r.name = 'super_admin' AND ur.is_active = true
+        WHERE r.name = 'Super Admin' AND ur.is_active = true
       `);
 
       const superAdminIds = superAdminResult.rows.map(row => row.id);
@@ -195,9 +198,14 @@ router.post('/register-org-admin', async (req, res) => {
       // Commit transaction
       await query('COMMIT');
 
+      // Load roles and permissions for response (RBAC)
+      const roles = await getUserRoles(user.id, user.organization_id);
+      const permissions = await getUserPermissions(user.id, user.organization_id);
+      const primaryRole = await getPrimaryRole(user.id) || user.role;
+
       // Generate JWT token
       const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
+        { userId: user.id, email: user.email, role: primaryRole },
         process.env.JWT_SECRET,
         { expiresIn: process.env.JWT_EXPIRE || '7d' }
       );
@@ -209,7 +217,11 @@ router.post('/register-org-admin', async (req, res) => {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          role: user.role,
+          full_name: `${user.first_name} ${user.last_name}`,
+          role: primaryRole,
+          roleNames: roles.map(r => r.name),
+          roles,
+          permissions,
           organizationId: user.organization_id
         },
         organization: {
