@@ -50,16 +50,16 @@ async function seedDatabase() {
     const geneticIds = geneticsResult.rows.map(r => r.id);
     console.log('🧬 Created genetics strains');
 
-    // Create rooms
+    // Create rooms (room_type must match constraint: PROPAGATION, VEGETATIVE, FLOWERING, DRYING, CURING, etc.)
     const roomsResult = await query(`
       INSERT INTO rooms (user_id, name, description, room_type, capacity, current_plants, dimensions_length, dimensions_width, dimensions_height, temperature_min, temperature_max, humidity_min, humidity_max, lighting_type, ventilation_system, co2_system)
       VALUES 
-        ($1, 'Flower Room A', 'Main flowering room', 'flowering', 300, 280, 10.0, 8.0, 3.5, 20.0, 26.0, 40.0, 50.0, 'LED 1000W', true, true),
-        ($1, 'Flower Room B', 'Secondary flowering', 'flowering', 300, 250, 10.0, 8.0, 3.5, 20.0, 26.0, 40.0, 50.0, 'HPS 1000W', true, true),
-        ($1, 'Veg Room 1', 'Vegetative growth', 'vegetative', 500, 420, 12.0, 10.0, 3.5, 22.0, 28.0, 50.0, 65.0, 'LED 600W', true, false),
-        ($1, 'Veg Room 2', 'Additional veg space', 'vegetative', 400, 350, 10.0, 10.0, 3.5, 22.0, 28.0, 50.0, 65.0, 'LED 600W', true, false),
-        ($1, 'Clone Room', 'Propagation area', 'cloning', 300, 250, 8.0, 6.0, 3.0, 24.0, 26.0, 70.0, 80.0, 'T5 Fluorescent', true, false),
-        ($1, 'Drying Room', 'Post-harvest drying', 'drying', 0, 0, 6.0, 5.0, 3.0, 18.0, 20.0, 55.0, 60.0, 'None', true, false)
+        ($1, 'Flower Room A', 'Main flowering room', 'FLOWERING', 300, 280, 10.0, 8.0, 3.5, 20.0, 26.0, 40.0, 50.0, 'LED 1000W', true, true),
+        ($1, 'Flower Room B', 'Secondary flowering', 'FLOWERING', 300, 250, 10.0, 8.0, 3.5, 20.0, 26.0, 40.0, 50.0, 'HPS 1000W', true, true),
+        ($1, 'Veg Room 1', 'Vegetative growth', 'VEGETATIVE', 500, 420, 12.0, 10.0, 3.5, 22.0, 28.0, 50.0, 65.0, 'LED 600W', true, false),
+        ($1, 'Veg Room 2', 'Additional veg space', 'VEGETATIVE', 400, 350, 10.0, 10.0, 3.5, 22.0, 28.0, 50.0, 65.0, 'LED 600W', true, false),
+        ($1, 'Clone Room', 'Propagation area', 'PROPAGATION', 300, 250, 8.0, 6.0, 3.0, 24.0, 26.0, 70.0, 80.0, 'T5 Fluorescent', true, false),
+        ($1, 'Drying Room', 'Post-harvest drying', 'DRYING', 0, 0, 6.0, 5.0, 3.0, 18.0, 20.0, 55.0, 60.0, 'None', true, false)
       RETURNING id
     `, [userId]);
 
