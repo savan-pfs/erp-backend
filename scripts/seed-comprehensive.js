@@ -112,16 +112,16 @@ async function seedDatabase() {
     }
     console.log('🌱 Created sample plants');
 
-    // Create tasks
+    // Create tasks (status must match constraint: TODO, IN_PROCESS, IN_REVIEW, HOLD, BLOCKED, DONE)
     await query(`
       INSERT INTO tasks (user_id, title, description, task_type, priority, status, room_id, batch_id, due_date)
       VALUES 
-        ($1, 'Water Flower Room A', 'Check and water plants in Flower Room A', 'watering', 'high', 'pending', $2, $3, CURRENT_DATE),
-        ($1, 'Feed Veg Room 1', 'Apply nutrient solution EC 1.8', 'feeding', 'high', 'pending', $4, $5, CURRENT_DATE),
-        ($1, 'Inspect for pests', 'Weekly IPM inspection', 'inspection', 'medium', 'pending', $2, NULL, CURRENT_DATE + INTERVAL '2 days'),
-        ($1, 'Harvest Batch 004', 'Prepare for harvest - check trichomes', 'harvest', 'urgent', 'pending', $6, $7, CURRENT_DATE + INTERVAL '5 days'),
-        ($1, 'Clone taking', 'Take 50 clones from mothers', 'general', 'medium', 'pending', $8, NULL, CURRENT_DATE + INTERVAL '3 days'),
-        ($1, 'Clean drying room', 'Sanitize after previous batch', 'cleaning', 'low', 'completed', $9, NULL, CURRENT_DATE - INTERVAL '1 day')
+        ($1, 'Water Flower Room A', 'Check and water plants in Flower Room A', 'watering', 'high', 'TODO', $2, $3, CURRENT_DATE),
+        ($1, 'Feed Veg Room 1', 'Apply nutrient solution EC 1.8', 'feeding', 'high', 'TODO', $4, $5, CURRENT_DATE),
+        ($1, 'Inspect for pests', 'Weekly IPM inspection', 'inspection', 'medium', 'TODO', $2, NULL, CURRENT_DATE + INTERVAL '2 days'),
+        ($1, 'Harvest Batch 004', 'Prepare for harvest - check trichomes', 'harvest', 'urgent', 'TODO', $6, $7, CURRENT_DATE + INTERVAL '5 days'),
+        ($1, 'Clone taking', 'Take 50 clones from mothers', 'general', 'medium', 'TODO', $8, NULL, CURRENT_DATE + INTERVAL '3 days'),
+        ($1, 'Clean drying room', 'Sanitize after previous batch', 'cleaning', 'low', 'DONE', $9, NULL, CURRENT_DATE - INTERVAL '1 day')
     `, [userId, roomIds[0], batchIds[0], roomIds[2], batchIds[1], roomIds[1], batchIds[3], roomIds[4], roomIds[5]]);
 
     console.log('✅ Created tasks');
