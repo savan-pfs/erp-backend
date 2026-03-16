@@ -15,7 +15,7 @@ async function runMigrations() {
     console.log('📋 Database Configuration:');
     console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
     console.log(`   Port: ${process.env.DB_PORT || 5432}`);
-    console.log(`   Database: ${process.env.DB_NAME || 'cultivation_compass'}`);
+    console.log(`   Database: ${process.env.DB_NAME || 'passionfarms_db'}`);
     console.log(`   User: ${process.env.DB_USER || 'postgres'}`);
     console.log(`   Password: ${process.env.DB_PASSWORD ? '***set***' : '❌ NOT SET'}`);
 

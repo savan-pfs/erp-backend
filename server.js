@@ -1,8 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-// const rateLimit = require('express-rate-limit'); // Disabled for development
 require('dotenv').config();
+const db = require('./config/database');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
@@ -121,11 +121,19 @@ app.use('/api/audit-logs', require('./routes/audit-logs'));
 app.use('/api/database', require('./routes/database'));
 app.use('/api/reports', require('./routes/reports'));
 
-// Health check endpoint
-app.get('/api/health', (req, res) => {
+// Health check endpoint (includes DB connection test for pgAdmin/PostgreSQL)
+app.get('/api/health', async (req, res) => {
+  let dbStatus = 'unknown';
+  try {
+    await db.query('SELECT 1');
+    dbStatus = 'connected';
+  } catch (err) {
+    dbStatus = 'error';
+  }
   res.json({
     status: 'OK',
-    message: 'Cultivation Compass Backend is running',
+    message: 'Passion Farms ERP Backend is running',
+    database: dbStatus,
     timestamp: new Date().toISOString()
   });
 });
@@ -146,12 +154,22 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 3004;
 
-// Listen on 0.0.0.0 to accept connections from all network interfaces
-// This ensures APIs are accessible from external networks, not just localhost
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🌱 Cultivation Compass Backend running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 API Health: http://0.0.0.0:${PORT}/api/health`);
-});
+// Start server and verify database connection (PostgreSQL/pgAdmin)
+async function start() {
+  try {
+    await db.query('SELECT 1');
+    console.log('✅ Database connected (PostgreSQL)');
+  } catch (err) {
+    console.error('❌ Database connection failed:', err.message);
+    console.error('   Check .env: DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD');
+  }
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🌱 Passion Farms ERP Backend running on port ${PORT}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
+  });
+}
+
+start();
 
 module.exports = app;

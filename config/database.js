@@ -17,7 +17,7 @@ function getPool() {
     pool = new Pool({
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT) || 5432,
-      database: process.env.DB_NAME || 'cultivation_compass',
+      database: process.env.DB_NAME || 'passionfarms_db',
       user: process.env.DB_USER || 'postgres',
       password: dbPassword,
       max: 20,
